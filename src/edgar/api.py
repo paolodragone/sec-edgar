@@ -116,6 +116,15 @@ class EdgarAPIClient:
                 f"Failed to parse company recent filings: {data}"
             ) from exc
 
+    def get_primary_document_url(self, filing: CompanyFiling) -> str:
+        return urljoin(
+            self.SEC_BASE_URL,
+            "/Archives/edgar/data"
+            f"/{filing.cik.lstrip('0')}"
+            f"/{filing.accession_number.replace("-", "")}"
+            f"/{filing.primary_document}",
+        )  # fmt: skip
+
 
 class EdgarAPIError(Exception): ...
 

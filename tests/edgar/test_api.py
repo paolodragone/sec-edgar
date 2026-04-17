@@ -1,10 +1,12 @@
 from collections.abc import Sequence
+from datetime import datetime
 from textwrap import dedent
 from typing import Mapping
 
 from pytest_httpx import HTTPXMock
 
 from edgar.api import EdgarAPIClient, get_http_client
+from edgar.types import CompanyFiling
 
 
 async def test_edgar_api_client_fetch_tickers(httpx_mock: HTTPXMock) -> None:
@@ -128,3 +130,22 @@ async def test_edgar_api_client_fetch_recent_filings(httpx_mock: HTTPXMock) -> N
     for filing in filings:
         assert filing.cik == cik
         assert filing.form == filter_form
+
+
+async def test_edgar_api_client_get_primary_document_url() -> None:
+    # https://data.sec.gov/submissions/CIK0001045810.json
+    filing = CompanyFiling(
+        cik="0001045810",
+        form="10-K",
+        filing_date=datetime.fromisoformat("2026-02-25"),
+        acceptance_datetime=datetime.fromisoformat("2026-02-25T16:42:19.000Z"[:-1]),
+        accession_number="0001045810-26-000021",
+        primary_document="nvda-20260125.htm",
+    )
+
+    async with get_http_client() as http_client:
+        edgar = EdgarAPIClient(http_client)
+        res = edgar.get_primary_document_url(filing)
+
+    exp_res = "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000021/nvda-20260125.htm"
+    assert res == exp_res
