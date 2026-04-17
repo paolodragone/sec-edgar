@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime
 from operator import attrgetter
 from pprint import pp
 from typing import Any
@@ -8,7 +9,7 @@ from httpx import AsyncClient as AsyncHTTPClient
 from pyrate_limiter import limiter_factory
 from pyrate_limiter.extras.httpx_limiter import AsyncRateLimiterTransport
 
-from edgar.types import CompanyTicker
+from edgar.types import CompanyFiling, CompanyTicker
 
 # Future-proofing :)
 DEFAULT_USER_AGENT = "paolo.dragone@quartr.se"
@@ -58,6 +59,62 @@ class EdgarAPIClient:
         tickers.sort(key=attrgetter("index"))
 
         return tickers
+
+    async def fetch_recent_filings(
+        self,
+        cik: str,
+        filter_form: str,
+    ) -> list[CompanyFiling]:
+        data = await self._fetch_recent_filings(cik)
+        return self._parse_recent_filings(data, filter_form)
+
+    async def _fetch_recent_filings(self, cik: str) -> Any:
+        url = urljoin(self.SEC_DATA_BASE_URL, f"submissions/CIK{cik}.json")
+        resp = await self.http_client.get(url)
+        return resp.json()
+
+    def _parse_recent_filings(self, data: Any, filter_form: str) -> list[CompanyFiling]:
+        try:
+            cik = data["cik"]
+            recent_filings = data["filings"]["recent"]
+
+            recent_filings_iter = zip(
+                recent_filings["form"],
+                recent_filings["filingDate"],
+                recent_filings["acceptanceDateTime"],
+                recent_filings["accessionNumber"],
+                recent_filings["primaryDocument"],
+            )
+
+            filings: list[CompanyFiling] = []
+
+            for row in recent_filings_iter:
+                form = row[0]
+
+                if form != filter_form:
+                    continue
+
+                filing = CompanyFiling(
+                    cik=cik,
+                    form=form,
+                    filing_date=datetime.fromisoformat(row[1]),
+                    acceptance_datetime=datetime.fromisoformat(row[2][:-1]),
+                    accession_number=row[3],
+                    primary_document=row[4],
+                )
+
+                filings.append(filing)
+
+            # the endpoint should return filings in reverse filing order
+            # but just in case we sort based on filing date and acceptance datetime
+            # (to break ties if two filings have the same filing date)
+            filings.sort(key=lambda item: (item.filing_date, item.acceptance_datetime))
+
+            return filings
+        except KeyError as exc:
+            raise EdgarAPIError(
+                f"Failed to parse company recent filings: {data}"
+            ) from exc
 
 
 class EdgarAPIError(Exception): ...

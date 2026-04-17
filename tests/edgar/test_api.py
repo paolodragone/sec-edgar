@@ -48,3 +48,83 @@ async def test_edgar_api_client_fetch_tickers(httpx_mock: HTTPXMock) -> None:
 
     for idx, ticker in test_tickers:
         assert tickers[idx].ticker == ticker
+
+
+async def test_edgar_api_client_fetch_recent_filings(httpx_mock: HTTPXMock) -> None:
+    httpx_mock.add_response(
+        # Excerpt from actual endpoint
+        text=dedent("""
+            {
+                "cik": "0001045810",
+                "filings": {
+                    "recent": {
+                        "form": [
+                            "4",
+                            "10-K",
+                            "8-K",
+                            "13F-HR",
+                            "10-K"
+                        ],
+                        "accessionNumber": [
+                            "0000102909-26-000426",
+                            "0001199039-26-000003",
+                            "0001725292-26-000002",
+                            "0001526111-26-000005",
+                            "0001696841-26-000006"
+                        ],
+                        "filingDate": [
+                            "2026-03-26",
+                            "2026-03-24",
+                            "2026-03-20",
+                            "2026-03-20",
+                            "2026-03-20"
+                        ],
+                        "acceptanceDateTime": [
+                            "2026-03-26T11:52:04.000Z",
+                            "2026-03-24T17:13:39.000Z",
+                            "2026-03-20T20:14:03.000Z",
+                            "2026-03-20T20:13:05.000Z",
+                            "2026-03-20T20:11:05.000Z"
+                        ],
+                        "primaryDocument": [
+                            "xslF345X06/wk-form4_1774051558.xml",
+                            "xsl144X01/primary_doc.xml",
+                            "xslF345X05/wk-form4_1767996327.xml",
+                            "xsl144X01/primary_doc.xml",
+                            "filename1.pdf"
+                        ]
+                    }
+                }
+            }
+        """).strip(),
+        is_reusable=True,
+    )
+
+    cik = "0001045810"
+    filter_form = "10-K"
+
+    async with get_http_client() as http_client:
+        edgar = EdgarAPIClient(http_client)
+        raw_filings = await edgar._fetch_recent_filings(cik)
+        filings = await edgar.fetch_recent_filings(cik, filter_form)
+
+    assert isinstance(raw_filings, Mapping)
+    assert "cik" in raw_filings
+    assert "filings" in raw_filings
+    assert "recent" in raw_filings["filings"]
+
+    for lst in [
+        "form",
+        "accessionNumber",
+        "filingDate",
+        "acceptanceDateTime",
+        "primaryDocument",
+    ]:
+        assert len(raw_filings["filings"]["recent"][lst]) == 5
+
+    assert isinstance(filings, Sequence)
+    assert len(filings) == 2
+
+    for filing in filings:
+        assert filing.cik == cik
+        assert filing.form == filter_form
