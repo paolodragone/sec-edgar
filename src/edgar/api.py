@@ -108,7 +108,10 @@ class EdgarAPIClient:
             # the endpoint should return filings in reverse filing order
             # but just in case we sort based on filing date and acceptance datetime
             # (to break ties if two filings have the same filing date)
-            filings.sort(key=lambda item: (item.filing_date, item.acceptance_datetime))
+            filings.sort(
+                key=lambda item: (item.filing_date, item.acceptance_datetime),
+                reverse=True,
+            )
 
             return filings
         except KeyError as exc:
