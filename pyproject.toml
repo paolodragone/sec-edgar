@@ -1,0 +1,32 @@
+[project]
+name = "edgar"
+version = "0.1.0"
+description = "A small client to fetch 10-K reports from the SEC EDGAR API"
+readme = "README.md"
+authors = [
+    { name = "Paolo Dragone", email = "dragone.paolo@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = []
+
+[project.scripts]
+sec-edgar = "edgar:main"
+
+[build-system]
+requires = ["uv_build>=0.8.15,<0.9.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+    "pytest-asyncio>=1.3.0",
+]
+
+[tool.ruff.lint]
+extend-select = ["I"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+addopts = [
+    "--import-mode=importlib",
+]
