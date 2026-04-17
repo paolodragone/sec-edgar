@@ -1,4 +1,6 @@
 import asyncio
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from datetime import datetime
 from operator import attrgetter
 from pprint import pp
@@ -130,6 +132,15 @@ class EdgarAPIClient:
 
 
 class EdgarAPIError(Exception): ...
+
+
+@asynccontextmanager
+async def get_edgar_api_client(
+    user_agent: str = DEFAULT_USER_AGENT,
+    limiter: Limiter | None = None,
+) -> AsyncIterator[EdgarAPIClient]:
+    async with get_http_client(user_agent=user_agent, limiter=limiter) as http_client:
+        yield EdgarAPIClient(http_client)
 
 
 def get_http_client(
