@@ -7,7 +7,10 @@ authors = [
     { name = "Paolo Dragone", email = "dragone.paolo@gmail.com" }
 ]
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "httpx>=0.28.1",
+    "pyrate-limiter>=4.1.0",
+]
 
 [project.scripts]
 sec-edgar = "edgar:main"
@@ -20,6 +23,7 @@ build-backend = "uv_build"
 dev = [
     "pytest>=9.0.3",
     "pytest-asyncio>=1.3.0",
+    "pytest-httpx>=0.36.2",
 ]
 
 [tool.ruff.lint]
