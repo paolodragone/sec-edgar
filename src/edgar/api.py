@@ -6,7 +6,7 @@ from typing import Any
 from urllib.parse import urljoin
 
 from httpx import AsyncClient as AsyncHTTPClient
-from pyrate_limiter import limiter_factory
+from pyrate_limiter import Limiter, limiter_factory
 from pyrate_limiter.extras.httpx_limiter import AsyncRateLimiterTransport
 
 from edgar.types import CompanyFiling, CompanyTicker
@@ -131,7 +131,7 @@ class EdgarAPIError(Exception): ...
 
 def get_http_client(
     user_agent: str = DEFAULT_USER_AGENT,
-    max_reqs_sec: int = DEFAULT_MAX_REQS_SEC,
+    limiter: Limiter | None = None,
 ) -> AsyncHTTPClient:
     """Create an SEC-friendly HTTP client.
 
@@ -139,12 +139,16 @@ def get_http_client(
     Additionally, the request rate limit is set to 10 requests/second, which is enforced by default.
     """
 
-    limiter = limiter_factory.create_inmemory_limiter(rate_per_duration=max_reqs_sec)
+    limiter = limiter or get_rate_limiter()
     transport = AsyncRateLimiterTransport(limiter=limiter)
     return AsyncHTTPClient(
         headers={"User-Agent": user_agent},
         transport=transport,
     )
+
+
+def get_rate_limiter(max_reqs_sec: int = DEFAULT_MAX_REQS_SEC) -> Limiter:
+    return limiter_factory.create_inmemory_limiter(rate_per_duration=max_reqs_sec)
 
 
 async def pprint_tickers() -> None:
