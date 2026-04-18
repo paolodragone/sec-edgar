@@ -47,7 +47,7 @@ def configure_logging(level: Level) -> None:
                     "processors": [
                         ProcessorFormatter.remove_processors_meta,
                         ConsoleRenderer(
-                            pad_event=60,
+                            pad_event_to=60,
                             colors=True,
                             sort_keys=False,
                             exception_formatter=RichTracebackFormatter(
