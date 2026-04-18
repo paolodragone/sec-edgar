@@ -4,8 +4,8 @@ from pathlib import Path
 from structlog.contextvars import bind_contextvars, unbind_contextvars
 
 from edgar.api import EdgarAPIClient, get_edgar_api_client
-from edgar.html2pdf import WebPDFPrinter
 from edgar.logging import get_logger
+from edgar.printer import WebPDFPrinter
 from edgar.types import CompanyFiling
 
 logger = get_logger(__name__)

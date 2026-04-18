@@ -6,7 +6,7 @@ from pytest_httpx import HTTPXMock
 from pytest_mock import MockerFixture
 
 from edgar.api import get_edgar_api_client
-from edgar.html2pdf import WebPDFPrinter
+from edgar.printer import WebPDFPrinter
 from edgar.reports import ReportDownloader
 
 
