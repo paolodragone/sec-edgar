@@ -1,9 +1,14 @@
 import asyncio
 from pathlib import Path
 
+from structlog.contextvars import bind_contextvars, unbind_contextvars
+
 from edgar.api import EdgarAPIClient, get_edgar_api_client
 from edgar.html2pdf import WebPDFPrinter
+from edgar.logging import get_logger
 from edgar.types import CompanyFiling
+
+logger = get_logger(__name__)
 
 
 class ReportDownloader:
@@ -63,8 +68,18 @@ class ReportDownloader:
         output_file: Path,
         filter_form: str = DEFAULT_FORM,
     ) -> None:
+        bind_contextvars(ticker=ticker)
+
+        logger.info(
+            "Download latest report",
+            form=filter_form,
+            output_file=str(output_file),
+        )
+
         if not (cik := self.ticker_cik_map.get(ticker)):
             raise UnknownTickerError(f"Unknown ticker: '{ticker}'")
+
+        logger.debug("Fetching recent filings", cik=cik)
 
         recent_filings = await self.client.fetch_recent_filings(
             cik,
@@ -81,8 +96,17 @@ class ReportDownloader:
 
         await self.download_report(latest_filing, output_file)
 
+        unbind_contextvars("ticker")
+
     async def download_report(self, filing: CompanyFiling, output_file: Path) -> None:
         report_url = self.client.get_primary_document_url(filing)
+
+        logger.debug(
+            "Downloading report",
+            report_url=report_url,
+            output_file=str(output_file),
+        )
+
         await self.printer.print(report_url, output_file=output_file)
 
 
