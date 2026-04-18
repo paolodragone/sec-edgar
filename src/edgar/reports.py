@@ -10,10 +10,10 @@ from edgar.types import CompanyFiling
 
 logger = get_logger(__name__)
 
+DEFAULT_FORM = "10-K"
+
 
 class ReportDownloader:
-    DEFAULT_FORM = "10-K"
-
     def __init__(
         self,
         client: EdgarAPIClient,
