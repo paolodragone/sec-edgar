@@ -75,3 +75,23 @@ or without uv (after installing the requirements):
 ```
 pyest
 ```
+
+## Code structure
+
+The `edgar` package contains the following files:
+```
+- api.py
+    An API client to execute basic requests to the SEC EDGAR API; also implements rate-limiting and identification logic (user-agent).
+- logging.py
+    Enable structured logging to be used throughtout the project.
+- main.py
+    The main entrypoint of the downloader script.
+- printer.py
+    Utilities using WeasyPrint to download webpages in PDF format.
+- reports.py
+    The main logic of the reports downloader.
+- types.py
+    Type definitions used throughout the project.
+```
+
+Unit tests are located in the `tests` subdirectory.
