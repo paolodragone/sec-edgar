@@ -41,13 +41,21 @@ class ReportDownloader:
         output_dir.mkdir(parents=True, exist_ok=True)
 
         async def _download_latest_report(ticker: str) -> None:
-            output_file = self.get_output_file_path(ticker, filter_form, output_dir)
+            try:
+                output_file = self.get_output_file_path(ticker, filter_form, output_dir)
 
-            await self.download_latest_report(
-                ticker=ticker,
-                output_file=output_file,
-                filter_form=filter_form,
-            )
+                await self.download_latest_report(
+                    ticker=ticker,
+                    output_file=output_file,
+                    filter_form=filter_form,
+                )
+            except ReportDownloaderError:
+                # Log errors but do not fail so other tasks can still run
+                logger.error(
+                    "An error occurred while downloading the latest report",
+                    ticker=ticker,
+                    exc_info=True,
+                )
 
         async with asyncio.TaskGroup() as tg:
             for ticker in tickers:
