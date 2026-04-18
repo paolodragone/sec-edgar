@@ -95,3 +95,7 @@ The `edgar` package contains the following files:
 ```
 
 Unit tests are located in the `tests` subdirectory.
+
+## Notes
+
+No AI tool was used to create this project, just old-fashioned Googling! :) (to find a good PDF printing library)
