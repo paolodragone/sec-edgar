@@ -27,6 +27,36 @@ class ReportDownloader:
             for ticker in tickers
         }  # fmt: skip
 
+    async def download_latest_reports(
+        self,
+        tickers: list[str],
+        output_dir: Path,
+        filter_form: str = DEFAULT_FORM,
+    ) -> None:
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        async def _download_latest_report(ticker: str) -> None:
+            output_file = self.get_output_file_path(ticker, filter_form, output_dir)
+
+            await self.download_latest_report(
+                ticker=ticker,
+                output_file=output_file,
+                filter_form=filter_form,
+            )
+
+        async with asyncio.TaskGroup() as tg:
+            for ticker in tickers:
+                tg.create_task(_download_latest_report(ticker))
+
+    def get_output_file_path(
+        self,
+        ticker: str,
+        filter_form: str,
+        output_dir: Path,
+    ) -> Path:
+        form = filter_form.replace("-", "").lower()
+        return output_dir / f"{ticker.lower()}_{form}.pdf"
+
     async def download_latest_report(
         self,
         ticker: str,
@@ -65,14 +95,14 @@ class UnknownTickerError(ReportDownloaderError): ...
 class NoFilingsFoundError(ReportDownloaderError): ...
 
 
-async def download_report(ticker: str, output_file: Path) -> None:
+async def download_reports(tickers: list[str], output_dir: Path) -> None:
     printer = WebPDFPrinter()
 
     async with get_edgar_api_client() as client:
         downloader = ReportDownloader(client, printer)
         await downloader.load_ticker_cik_map()
-        await downloader.download_latest_report(ticker, output_file)
+        await downloader.download_latest_reports(tickers, output_dir)
 
 
 if __name__ == "__main__":
-    asyncio.run(download_report("NVDA", Path("nvda.pdf")))
+    asyncio.run(download_reports(["NVDA", "GOOGL"], Path(".tmp")))
